@@ -1,3 +1,4 @@
+import os
 from requests import get, post
 from random import randint
 from colorama import Fore, Style, init
@@ -59,6 +60,10 @@ def variant2_Status(token):
 if __name__ == "__main__":
     try:
         checked = []
+        # tokens.txtファイルが存在しない場合、新規作成します
+        if not os.path.exists('tokens.txt'):
+            with open('tokens.txt', 'w') as f:
+                pass
         with open('tokens.txt', 'r') as tokens:
             for token in tokens.read().split('\n'):
                 if len(token) > 15 and token not in checked and variant2(token) == True:
@@ -76,3 +81,4 @@ if __name__ == "__main__":
         input('Press Enter For Exit...')
     except:
         input('Can`t Open "tokens.txt" File!')
+
