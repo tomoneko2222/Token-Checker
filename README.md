@@ -1,3 +1,4 @@
+# 🔴down
 # Discord Token Checker
 * Python : 3.6+
 ***
