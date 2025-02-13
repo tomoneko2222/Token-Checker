@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Discord Token Checker</title>
+  <style>
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 600px;
+      padding: 40px;
+      background-color: rgba(30, 30, 30, 0.8);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 2px solid #333;
+      border-radius: 5px;
+      background-color: rgba(37, 37, 37, 0.8);
+      color: #ffffff;
+      box-sizing: border-box;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      resize: none;
+      overflow-y: hidden;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+
+    textarea:focus {
+      border-color: #64b5f6;
+      outline: none;
+      box-shadow: 0 0 15px rgba(100, 181, 246, 0.7);
+    }
+
+    textarea::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    textarea::-webkit-scrollbar-track {
+      background: rgba(37, 37, 37, 0.8);
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+      background: #64b5f6;
+      border-radius: 4px;
+    }
+
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: #42a5f5;
+    }
+
+    button {
+      background-color: #64b5f6;
+      color: #ffffff;
+      padding: 14px 30px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background-color: #42a5f5;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .checkbox-container {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .checkbox-container label {
+      color: #ddd;
+      font-size: 16px;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    #console {
+      margin-top: 30px;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 5px;
+      background-color: rgba(37, 37, 37, 0.8);
+      color: #b0bec5;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 250px;
+      text-align: left;
+      transition: all 0.3s ease;
+    }
+
+    #console::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    #console::-webkit-scrollbar-track {
+      background: rgba(37, 37, 37, 0.8);
+    }
+
+    #console::-webkit-scrollbar-thumb {
+      background: #64b5f6;
+      border-radius: 5px;
+    }
+
+    #console::-webkit-scrollbar-thumb:hover {
+      background: #42a5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Discord Token Checker</h1>
+    <textarea id="tokenInput" placeholder="Discord Token(s)" rows="1"></textarea>
+    <button onclick="checkTokens()">Token Check</button>
+    <div class="checkbox-container">
+      <label><input type="checkbox" id="detailCheck" name="detail">詳細表示</label>
+      <label><input type="checkbox" id="removeInvalidCheck" name="removeInvalid" checked>無効なtokenを削除する</label>
+    </div>
+    <div id="console"></div>
+  </div>
+
+  <script>
+    const tokenInput = document.getElementById('tokenInput');
+    tokenInput.addEventListener('input', autoResize, false);
+    tokenInput.addEventListener('keydown', handleEnter, false);
+
+    function autoResize() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    }
+
+    function handleEnter(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const cursorPosition = this.selectionStart;
+        const value = this.value;
+        this.value = value.substring(0, cursorPosition) + '\n' + value.substring(cursorPosition);
+        this.selectionStart = this.selectionEnd = cursorPosition + 1;
+        autoResize.call(this);
+      }
+    }
+
+    async function checkTokens() {
+      const tokens = tokenInput.value.trim().split('\n').filter(token => token.trim() !== '');
+      const consoleDiv = document.getElementById('console');
+      const detailCheck = document.getElementById('detailCheck');
+      const removeInvalidCheck = document.getElementById('removeInvalidCheck');
+
+      consoleDiv.textContent = 'Checking tokens...\n';
+      let validTokens = [];
+
+      for (const token of tokens) {
+        try {
+          const response = await fetch('https://discord.com/api/v9/users/@me', {
+            headers: {
+              'Authorization': token.trim()
+            }
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            if (detailCheck.checked) {
+              consoleDiv.textContent += `Token: ${token}\nStatus: Valid\nDetails: ${JSON.stringify(userData, null, 2)}\n\n`;
+            } else {
+              consoleDiv.textContent += `Token: ${token}\nStatus: Valid\n\n`;
+            }
+            validTokens.push(token);
+          } else {
+            consoleDiv.textContent += `Token: ${token}\nStatus: Invalid\n\n`;
+            if (!removeInvalidCheck.checked) {
+              validTokens.push(token);
+            }
+          }
+        } catch (error) {
+          consoleDiv.textContent += `Token: ${token}\nAn error occurred: ${error}\n\n`;
+          if (!removeInvalidCheck.checked) {
+            validTokens.push(token);
+          }
+        }
+      }
+
+      if (removeInvalidCheck.checked) {
+        tokenInput.value = validTokens.join('\n');
+      }
+    }
+  </script>
+</body>
+</html>
